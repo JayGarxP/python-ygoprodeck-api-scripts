@@ -1,10 +1,15 @@
 # Python Script that filters JSON file from https://db.ygoprodeck.com/api/v7/cardinfo.php database
 #       and creates CSV that can be imported into Google Sheets
+# https://pastebin.com/aMKM2sqg
+#       make sure to import as TAB delimited!
 #       showing just the card name and its tcgplayer.com market price
 #           sorted from highest price to lowest (descending order)
+#       and grouped by border, Monster Spell Trap Extra
 
 import json  # https://docs.python.org/3/library/json.html
 import enum
+import csv
+from datetime import datetime
 
 # make dictionary from json file API query result
 with open("cardinfo.php.json", encoding='utf-8') as input_file:
@@ -62,14 +67,27 @@ for x in range(len(cards)):
 # probably better way to do this with list comprehension somehow
 # ex_info = [x for x in cards]
 
-# print(name_price_dict_list[0])
-# print(name_price_dict_list[1])
-# print(name_price_dict_list[2])
-# print(name_price_dict_list[3])
-
 # sort by price descending
 for x in range(len(name_price_dict_list)):
     price_desc = dict(sorted(((value, key) for (key, value) in name_price_dict_list[x].items()), reverse=True))
-    print(price_desc)
+    #  make keys (prices) the values
+    price_desc = {value: key for key, value in price_desc.items()}
+    # overwrite alphabetically sorted dictionarys
+    name_price_dict_list[x] = price_desc
+
 
 # write csv file that will be accepted by google sheets
+
+csv_out = SETNAME + str(datetime.now().date()) + ".csv"
+try:
+    with open(csv_out, 'w', newline='') as csvfile:
+        w = csv.writer(csvfile, delimiter='\t')
+        w.writerow(["Name", "Price $USD"])
+        # w.writerow(["MONSTERS", SETNAME]) # could do this but naw
+        for index in range(len(name_price_dict_list)):
+            w.writerows(name_price_dict_list[index].items())
+
+
+
+except IOError:
+    print("I/O Error")
